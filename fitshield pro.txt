@@ -1,0 +1,256 @@
+}
+
+  function handleDone() {
+    onConnect(chosen);
+    onClose();
+  }
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, background: "#000000CC", zIndex: 200,
+      display: "flex", alignItems: "center", justifyContent: "center", padding: 20
+    }}>
+      <div style={{
+        background: COLORS.navyCard, borderRadius: 20, padding: 28, maxWidth: 480, width: "100%",
+        border: 1px solid ${COLORS.cyan}44, boxShadow: 0 0 60px ${COLORS.cyan}22
+      }}>
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <h3 style={{ margin: 0, color: COLORS.offwhite, fontSize: 18 }}>
+            {step === "choose" && "ðŸ”— Connect Your Device"}
+            {step === "auth" && ðŸ” Authorize ${chosen?.name}}
+            {step === "syncing" && "â³ Syncing Data..."}
+            {step === "done" && "âœ… Connected!"}
+          </h3>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: COLORS.muted, fontSize: 20, cursor: "pointer" }}>âœ•</button>
+        </div>
+
+        {/* Step: Choose device */}
+        {step === "choose" && (
+          <div>
+            <p style={{ color: COLORS.muted, fontSize: 13, marginBottom: 16 }}>Select your smartwatch or fitness tracker to begin the OAuth authorization flow.</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {MOCK_DEVICES.map(d => (
+                <button key={d.id} onClick={() => handleChoose(d)} style={{
+                  background: COLORS.navyLight, border: 1px solid ${COLORS.cyan}33, borderRadius: 12,
+                  padding: "12px 16px", cursor: "pointer", textAlign: "left",
+                  display: "flex", alignItems: "center", gap: 14
+                }}>
+                  <span style={{ fontSize: 24 }}>{d.icon}</span>
+                  <div>
+                    <div style={{ color: COLORS.offwhite, fontWeight: 700, fontSize: 14 }}>{d.name}</div>
+                    <div style={{ color: COLORS.muted, fontSize: 11, marginTop: 2 }}>{d.api}</div>
+                  </div>
+                  <span style={{ marginLeft: "auto", color: COLORS.cyan, fontSize: 16 }}>â€º</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Step: Auth */}
+        {step === "auth" && chosen && (
+          <div>
+            <div style={{ background: COLORS.navyLight, borderRadius: 12, padding: 16, marginBottom: 16, fontFamily: "monospace", fontSize: 12, color: COLORS.green }}>
+              <div style={{ color: COLORS.muted, marginBottom: 6 }}>// OAuth 2.0 Authorization Request</div>
+              <div>GET https://{chosen.endpoint.split("/")[0]}/oauth2/authorize</div>
+              <div style={{ color: COLORS.cyan, marginTop: 4 }}>?client_id=<span style={{ color: COLORS.amber }}>FITSHIELD_PRO_CLIENT</span></div>
+              <div style={{ color: COLORS.cyan }}>?response_type=<span style={{ color: COLORS.amber }}>code</span></div>
+              <div style={{ color: COLORS.cyan }}>?scope=<span style={{ color: COLORS.amber }}>heartrate activity sleep</span></div>
+              <div style={{ color: COLORS.cyan }}>?redirect_uri=<span style={{ color: COLORS.amber }}>fitshieldpro.app/callback</span></div>
+            </div>
+            <p style={{ color: COLORS.muted, fontSize: 12, marginBottom: 16 }}>
+              In production, this opens {chosen.brand}'s login page. You grant permission, and FitShield Pro receives a secure token to read your health data.
+            </p>
+            <button onClick={handleAuth} style={{
+              width: "100%", padding: "12px", borderRadius: 10, border: "none",
+              background: COLORS.cyan, color: COLORS.navy, fontWeight: 800, fontSize: 15, cursor: "pointer"
+            }}>
+              Authorize with {chosen.brand} â†’
+            </button>
+          </div>
+        )}
+
+        {/* Step: Syncing */}
+        {step === "syncing" && (
+          <div style={{ textAlign: "center", padding: "20px 0" }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>ðŸ“¡</div>
+            <p style={{ color: COLORS.cyan, fontFamily: "monospace", fontSize: 13 }}>
+              Fetching heart rate... âœ“<br />
+              Syncing step count... âœ“<br />
+              Loading sleep data... âœ“<br />
+              Running security scan...
+            </p>
+            <div style={{ marginTop: 16, background: "#1a2d4a", borderRadius: 4, height: 6, overflow: "hidden" }}>
+              <div style={{
+                height: "100%", background: COLORS.cyan, borderRadius: 4,
+                animation: "none", width: "80%"
+              }} />
+            </div>
+          </div>
+        )}
+
+        {/* Step: Done */}
+        {step === "done" && chosen && (
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 52, marginBottom: 12 }}>ðŸŽ‰</div>
+            <p style={{ color: COLORS.green, fontWeight: 700, fontSize: 16, marginBottom: 8 }}>{chosen.name} connected!</p>
+            <p style={{ color: COLORS.muted, fontSize: 13, marginBottom: 20 }}>
+              Live health data is now flowing into FitShield Pro. Your wearable's privacy risk has been analyzed.
+            </p>
+            <button onClick={handleDone} style={{
+              width: "100%", padding: "12px", borderRadius: 10, border: "none",
+              background: COLORS.green, color: COLORS.navy, fontWeight: 800, fontSize: 15, cursor: "pointer"
+            }}>
+              View My Live Dashboard â†’
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// â”€â”€ Live Dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function LiveDashboard({ device, onDisconnect }) {
+  const [data, setData] = useState(mockLiveData());
+
+  function refresh() { setData(mockLiveData()); }
+
+  const metrics = [
+    { label: "Heart Rate", value: data.heartRate, unit: "bpm", icon: "â¤ï¸", color: COLORS.crimson, warning: data.heartRate > 85 },
+    { label: "Steps Today", value: data.steps.toLocaleString(), unit: "steps", icon: "ðŸ‘Ÿ", color: COLORS.cyan },
+    { label: "Calories", value: data.calories, unit: "kcal", icon: "ðŸ”¥", color: COLORS.amber },
+    { label: "Sleep", value: data.sleep, unit: "hrs", icon: "ðŸ˜´", color: COLORS.green, warning: data.sleep < 7 },
+    { label: "SpOâ‚‚", value: data.spO2, unit: "%", icon: "ðŸ«", color: COLORS.cyan, warning: data.spO2 < 97 },
+    { label: "Stress Level", value: data.stress, unit: "/100", icon: "ðŸ§ ", color: COLORS.amber, warning: data.stress > 60 },
+  ];
+
+  return (
+    <div style={{ marginTop: 28 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
+        <div>
+          <div style={{ fontSize: 11, color: COLORS.green, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>â— Live â€” {device.name}</div>
+          <div style={{ fontSize: 12, color: COLORS.muted, marginTop: 2 }}>via {device.api}</div>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={refresh} style={{
+            padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700,
+            background: COLORS.cyan + "22", color: COLORS.cyan, border: 1px solid ${COLORS.cyan}44, cursor: "pointer"
+          }}>â†» Refresh</button>
+          <button onClick={onDisconnect} style={{
+            padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700,
+            background: COLORS.crimson + "22", color: COLORS.crimson, border: 1px solid ${COLORS.crimson}44, cursor: "pointer"
+          }}>Disconnect</button>
+        </div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+        {metrics.map(m => (
+          <div key={m.label} style={{
+            background: COLORS.navyCard, borderRadius: 14, padding: "14px 16px",
+            border: 1px solid ${m.warning ? COLORS.amber + "66" : COLORS.cyan + "22"},
+            boxShadow: m.warning ? 0 0 12px ${COLORS.amber}22 : "none"
+          }}>
+            <div style={{ fontSize: 20, marginBottom: 6 }}>{m.icon}</div>
+            <div style={{ fontSize: 22, fontWeight: 900, fontFamily: "monospace", color: m.warning ? COLORS.amber : m.color }}>
+              {m.value}<span style={{ fontSize: 11, fontWeight: 400, color: COLORS.muted, marginLeft: 3 }}>{m.unit}</span>
+            </div>
+            <div style={{ fontSize: 11, color: COLORS.muted, marginTop: 4, textTransform: "uppercase", letterSpacing: 0.4 }}>{m.label}</div>
+            {m.warning && <div style={{ fontSize: 10, color: COLORS.amber, marginTop: 4 }}>âš  Check this</div>}
+          </div>
+        ))}
+      </div>
+      <div style={{ marginTop: 12, background: COLORS.navyLight, borderRadius: 10, padding: "10px 14px", borderLeft: 3px solid ${COLORS.green} }}>
+        <div style={{ fontSize: 11, color: COLORS.green, fontWeight: 700, textTransform: "uppercase", marginBottom: 2 }}>ðŸ”’ Security Status</div>
+        <div style={{ fontSize: 12, color: COLORS.offwhite }}>
+          Data transmitted via <strong style={{ color: COLORS.cyan }}>{device.id === "apple" || device.id === "fitbit_whoop" ? "AES-256" : "TLS 1.3"}</strong> encryption.
+          Token expires in <strong style={{ color: COLORS.cyan }}>55 min</strong>. No third-party sharing detected.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// â”€â”€ Nav â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const NAV = [
+  { id: "home", label: "Home", icon: "ðŸ " },
+  { id: "security", label: "App Security", icon: "ðŸ”’" },
+  { id: "wearable", label: "Wearable", icon: "ðŸ“¡" },
+  { id: "injury", label: "Injury", icon: "ðŸ©¹" },
+  { id: "style", label: "Style", icon: "ðŸ‘Ÿ" },
+];
+
+// â”€â”€ Root â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+export default function FitShieldPro() {
+  const [tab, setTab] = useState("home");
+  const [showConnect, setShowConnect] = useState(false);
+  const [connectedDevice, setConnectedDevice] = useState(null);
+
+  const content = {
+    home: <Hero setTab={setTab} />,
+    security: <SecurityAudit />,
+    wearable: <WearableChecker />,
+    injury: <InjuryPrevention />,
+    style: <StyleGuide />,
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", background: COLORS.navy, color: COLORS.offwhite, fontFamily: "system-ui, -apple-system, sans-serif" }}>
+      {/* Modal */}
+      {showConnect && (
+        <ConnectModal
+          onClose={() => setShowConnect(false)}
+          onConnect={(device) => { setConnectedDevice(device); setShowConnect(false); }}
+        />
+      )}
+
+      {/* Top bar */}
+      <div style={{ background: COLORS.navyLight, borderBottom: 1px solid ${COLORS.cyan}22, padding: "0 20px", position: "sticky", top: 0, zIndex: 100 }}>
+        <div style={{ maxWidth: 860, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 52 }}>
+          <div style={{ fontWeight: 900, fontSize: 17, color: COLORS.offwhite }}>
+            Fit<span style={{ color: COLORS.cyan }}>Shield</span> Pro
+          </div>
+          <div style={{ display: "flex", gap: 2, alignItems: "center" }}>
+            {NAV.map(n => (
+              <button key={n.id} onClick={() => setTab(n.id)} style={{
+                padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                background: tab === n.id ? COLORS.cyan + "22" : "transparent",
+                color: tab === n.id ? COLORS.cyan : COLORS.muted,
+                border: "none",
+              }}>
+                <span style={{ marginRight: 4 }}>{n.icon}</span>
+              </button>
+            ))}
+            {/* Connect button */}
+            <button onClick={() => setShowConnect(true)} style={{
+              marginLeft: 8, padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700,
+              background: connectedDevice ? COLORS.green + "22" : COLORS.cyan,
+              color: connectedDevice ? COLORS.green : COLORS.navy,
+              border: connectedDevice ? 1px solid ${COLORS.green}66 : "none",
+              cursor: "pointer", whiteSpace: "nowrap"
+            }}>
+              {connectedDevice ? â— ${connectedDevice.icon} Connected : "âŒš Connect Device"}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div style={{ maxWidth: 860, margin: "0 auto", padding: "24px 20px 60px" }}>
+        {content[tab]}
+        {/* Live dashboard shown below any tab when connected */}
+        {connectedDevice && (
+          <LiveDashboard
+            device={connectedDevice}
+            onDisconnect={() => setConnectedDevice(null)}
+          />
+        )}
+      </div>
+
+      {/* Footer */}
+      <div style={{ textAlign: "center", padding: "20px", borderTop: 1px solid ${COLORS.cyan}22, color: COLORS.muted, fontSize: 12 }}>
+        FitShield Pro Â· Built for PhysTech 2026 Hackathon Â· by Suchita Kumari Â· <span style={{ color: COLORS.cyan }}>github.com/SUCHITA-KUMARI-CYBER</span>
+      </div>
+    </div>
+  );
+}
